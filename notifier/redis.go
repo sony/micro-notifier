@@ -214,18 +214,18 @@ func (db *DB) FinishDB() {
 func (db *DB) watchAndGet(key string) (interface{}, error) {
 	c, err := db.getPool()
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	defer c.Close()
 
 	_, err = c.Do("WATCH", key)
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	r, err := c.Do("GET", key)
 	if err != nil {
 		_, _ = c.Do("UNWATCH")
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	return r, nil
 }
@@ -245,33 +245,33 @@ func (db *DB) unwatch() {
 // The latter half of the transaction.  Assume the key is already
 // WATCHed.  Encode payload by json and write it then commit,
 // or discard everything if any step fails.  On success, returns
-// what EXEC returns and nil.  On error, returns nil and *AppError.
+// what EXEC returns and nil.  On error, returns nil and *appError.
 func (db *DB) updateAndCommit(key string, payload interface{}) (interface{}, error) {
 	c, err := db.getPool()
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	defer c.Close()
 
 	data, err := json.Marshal(payload)
 	if err != nil {
 		_, _ = c.Do("UNWATCH")
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	_, err = c.Do("MULTI")
 	if err != nil {
 		_, _ = c.Do("UNWATCH")
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	_, err = c.Do("SET", key, data)
 	if err != nil {
 		_, _ = c.Do("DISCARD")
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	r, err := c.Do("EXEC")
 	if err != nil {
 		_, _ = c.Do("DISCARD")
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	return r, nil
 }
@@ -280,7 +280,7 @@ func (db *DB) updateAndCommit(key string, payload interface{}) (interface{}, err
 func (db *DB) GetChannels(appname string) (map[string]*Channel, error) {
 	c, err := db.getPool()
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	defer c.Close()
 
@@ -292,17 +292,17 @@ func (db *DB) GetChannels(appname string) (map[string]*Channel, error) {
 		r, err := c.Do("SCAN", cursor, "MATCH", pattern)
 
 		if err != nil {
-			return nil, WrapErr(500, err)
+			return nil, wrapErr(500, err)
 		}
 		ar, ok := r.([]interface{})
 		if !ok {
-			return nil, AppErr(500, fmt.Sprintf("redis SCAN returned weird value: %v", r))
+			return nil, appErr(500, fmt.Sprintf("redis SCAN returned weird value: %v", r))
 		}
 
 		next := string(ar[0].([]byte))
 		keys, ok := ar[1].([]interface{})
 		if !ok {
-			return nil, AppErr(500, fmt.Sprintf("redis SCAN returned weird value: %v", r))
+			return nil, appErr(500, fmt.Sprintf("redis SCAN returned weird value: %v", r))
 		}
 		nkeys := len(keys)
 
@@ -310,12 +310,12 @@ func (db *DB) GetChannels(appname string) (map[string]*Channel, error) {
 			key := string(keys[i].([]byte))
 			r1, err := c.Do("GET", key)
 			if err != nil {
-				return nil, WrapErr(500, err)
+				return nil, wrapErr(500, err)
 			}
 			var ch Channel
 			err = json.Unmarshal(r1.([]byte), &ch)
 			if err != nil {
-				return nil, WrapErr(500, err)
+				return nil, wrapErr(500, err)
 			}
 			channels[ch.Name] = &ch
 		}
@@ -332,22 +332,22 @@ func (db *DB) GetChannels(appname string) (map[string]*Channel, error) {
 func (db *DB) GetChannel(appname string, channame string) (*Channel, error) {
 	c, err := db.getPool()
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	defer c.Close()
 
 	r, err := c.Do("GET", appname+"/channels/"+channame)
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	if r == nil {
-		return nil, AppErr(400, fmt.Sprintf("No such channel: %s in %s", channame, appname))
+		return nil, appErr(400, fmt.Sprintf("No such channel: %s in %s", channame, appname))
 	}
 
 	var ch Channel
 	err = json.Unmarshal(r.([]byte), &ch)
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	return &ch, nil
 }
@@ -366,7 +366,7 @@ func (db *DB) GetOrCreateChannel(appname string, channame string) (*Channel, err
 		db.unwatch()
 		err := json.Unmarshal(r.([]byte), &ch)
 		if err != nil {
-			return nil, WrapErr(500, err)
+			return nil, wrapErr(500, err)
 		}
 		return &ch, nil
 	}
@@ -398,7 +398,7 @@ func (db *DB) AddUserIDToChannel(appname string, channame string, uid int) error
 		err := json.Unmarshal(r.([]byte), &ch)
 		if err != nil {
 			db.unwatch()
-			return WrapErr(500, err)
+			return wrapErr(500, err)
 		}
 	}
 	ch.SubscribeUser(uid)
@@ -425,7 +425,7 @@ func (db *DB) DeleteUserIDFromChannel(appname string, channame string, uid int) 
 	}
 	if r == nil {
 		db.unwatch()
-		return AppErr(400,
+		return appErr(400,
 			fmt.Sprintf("Attempt to unsubscribe nonexistent channel (application: %s, uid %d, channel: %s)",
 				appname, uid, channame))
 	}
@@ -433,7 +433,7 @@ func (db *DB) DeleteUserIDFromChannel(appname string, channame string, uid int) 
 	err := json.Unmarshal(r.([]byte), &ch)
 	if err != nil {
 		db.unwatch()
-		return WrapErr(500, err)
+		return wrapErr(500, err)
 	}
 	ch.UnsubscribeUser(uid)
 	r, apperr = db.updateAndCommit(key, ch)
@@ -467,7 +467,7 @@ func (db *DB) allocateUserID(appname string) (int, error) {
 		err := json.Unmarshal(r.([]byte), &uids)
 		if err != nil {
 			db.unwatch()
-			return -1, WrapErr(500, err)
+			return -1, wrapErr(500, err)
 		}
 		maxid := 0
 		for _, u := range uids.UIDs {
@@ -520,7 +520,7 @@ func (db *DB) DeleteUserID(appname string, uid int) error {
 	err := json.Unmarshal(r.([]byte), &uids)
 	if err != nil {
 		db.unwatch()
-		return WrapErr(500, err)
+		return wrapErr(500, err)
 	}
 
 	for idx, u := range uids.UIDs {
@@ -547,7 +547,7 @@ func (db *DB) DeleteUserID(appname string, uid int) error {
 func (db *DB) GetAllUserIDs(appname string) ([]int, error) {
 	c, err := db.getPool()
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	defer c.Close()
 
@@ -555,7 +555,7 @@ func (db *DB) GetAllUserIDs(appname string) ([]int, error) {
 
 	r, err := c.Do("GET", key)
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 	if r == nil {
 		return make([]int, 0), nil
@@ -564,7 +564,7 @@ func (db *DB) GetAllUserIDs(appname string) ([]int, error) {
 	var uids UIDArray
 	err = json.Unmarshal(r.([]byte), &uids)
 	if err != nil {
-		return nil, WrapErr(500, err)
+		return nil, wrapErr(500, err)
 	}
 
 	return uids.UIDs, nil
@@ -603,7 +603,7 @@ func (s *Supervisor) redisSubscriberLoop() {
 				apperr := s.handleRedisEventRequest(&er)
 				if apperr != nil {
 					s.logger.Infow("redis message handle error",
-						"AppError", apperr,
+						"appError", apperr,
 						"message", er)
 				}
 			}
@@ -643,16 +643,16 @@ func (s *Supervisor) PublishRedisEvent(ev *EventRequest) error {
 	if s.db != nil {
 		data, err := json.Marshal(ev)
 		if err != nil {
-			return WrapErr(500, err)
+			return wrapErr(500, err)
 		}
 		c, err := s.db.getPool()
 		if err != nil {
-			return WrapErr(500, err)
+			return wrapErr(500, err)
 		}
 		_, err = c.Do("PUBLISH", "events", data)
 		_ = c.Close()
 		if err != nil {
-			return WrapErr(500, err)
+			return wrapErr(500, err)
 		}
 	}
 	return nil

@@ -190,7 +190,7 @@ func (s *Supervisor) establishConnection(w http.ResponseWriter, r *http.Request)
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		returnErr(s, w, WrapErr(500, err))
+		returnErr(s, w, wrapErr(500, err))
 		return
 	}
 

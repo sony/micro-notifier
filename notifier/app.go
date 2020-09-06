@@ -58,7 +58,7 @@ func (s *Supervisor) GetApp(name string) (*Application, error) {
 			return a, nil
 		}
 	}
-	return nil, AppErr(404, "No such application")
+	return nil, appErr(404, "No such application")
 }
 
 // GetAppFromKey returns the application with specified key.
@@ -67,7 +67,7 @@ func (s *Supervisor) GetAppFromKey(key string) (*Application, error) {
 	if ca != nil {
 		return s.GetApp(ca.Name)
 	}
-	return nil, AppErr(404, "Unknown application key")
+	return nil, appErr(404, "Unknown application key")
 }
 
 // GetChannels returns an array of channels in the given app
@@ -141,7 +141,7 @@ func (s *Supervisor) RemoveUser(appname string, uid int) error {
 	}
 	u := a.GetUserByID(uid)
 	if u == nil {
-		return AppErr(500,
+		return appErr(500,
 			fmt.Sprintf("RemoveUser called on an unmanaged user (app=%s, uid=%d)",
 				appname, uid))
 	}
@@ -185,7 +185,7 @@ func (s *Supervisor) Subscribe(appname string, uid int, channame string) error {
 	}
 	u := a.GetUserByID(uid)
 	if u == nil {
-		return AppErr(500,
+		return appErr(500,
 			fmt.Sprintf("Subscribe called on an unmanaged user (app=%s, uid=%d, channel=%s)",
 				appname, uid, channame))
 	}
@@ -212,7 +212,7 @@ func (s *Supervisor) Unsubscribe(appname string, uid int, channame string) error
 	}
 	u := a.GetUserByID(uid)
 	if u == nil {
-		return AppErr(500,
+		return appErr(500,
 			fmt.Sprintf("Unsubscribe called on an unmanaged user (app=%s, uid=%d, channel=%s)",
 				appname, uid, channame))
 	}
@@ -241,7 +241,7 @@ func (a *Application) getChannel(channame string) (*Channel, error) {
 	if ok {
 		return ch, nil
 	}
-	return nil, AppErr(404, "No such channel")
+	return nil, appErr(404, "No such channel")
 }
 
 // This is only used in standalone mode

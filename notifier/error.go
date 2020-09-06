@@ -1,25 +1,25 @@
 package notifier
 
-// AppError wraps application error with HTTP response code.
-type AppError struct {
+// appError wraps application error with HTTP response code.
+type appError struct {
 	Code     int    // HTTP response code
 	Message  string // custom message
 	Internal error  // original error, if any
 }
 
-// AppErr returns a new AppError including the given HTTP response code.
-func AppErr(code int, message string) error {
-	return &AppError{Code: code, Message: message, Internal: nil}
+// appErr returns a new appError including the given HTTP response code.
+func appErr(code int, message string) error {
+	return &appError{Code: code, Message: message, Internal: nil}
 }
 
-// WrapErr returns a new AppError wrapping the given error.
-func WrapErr(code int, err error) error {
+// wrapErr returns a new appError wrapping the given error.
+func wrapErr(code int, err error) error {
 	if err == nil {
 		return nil
 	}
-	return &AppError{Code: code, Message: err.Error(), Internal: err}
+	return &appError{Code: code, Message: err.Error(), Internal: err}
 }
 
-func (e *AppError) Error() string {
+func (e *appError) Error() string {
 	return e.Message
 }

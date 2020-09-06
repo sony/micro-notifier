@@ -63,9 +63,9 @@ func returnJSON(w http.ResponseWriter, val interface{}) {
 }
 
 func returnErr(s *Supervisor, w http.ResponseWriter, err error) {
-	apperr, ok := err.(*AppError)
+	apperr, ok := err.(*appError)
 	if !ok {
-		apperr = &AppError{Code: 500, Message: "not application error"}
+		apperr = &appError{Code: 500, Message: "Not application error"}
 	}
 
 	if apperr.Code == 500 {
@@ -144,7 +144,7 @@ func (s *Supervisor) trigger(w http.ResponseWriter, r *http.Request) {
 	var ev eventPayload
 	err := json.NewDecoder(r.Body).Decode(&ev)
 	if err != nil {
-		returnErr(s, w, WrapErr(400, err))
+		returnErr(s, w, wrapErr(400, err))
 		return
 	}
 
