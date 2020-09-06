@@ -1,0 +1,19 @@
+{
+    "host" : "localhost",
+    "port" : 8150,
+    "certificate" : "../config/sample-self-signed-cert.pem",
+    "private-key" : "../config/sample-self-signed-key.pem",
+
+    "applications": [
+        {
+            "name"   : "testapp",
+            "key"    : "1234567890",
+            "secret" : "abcdefghij"
+        },
+        {
+            "name"   : "testapp2",
+            "key"    : "anystringwilldo",
+            "secret" : "xyzzy"
+        }
+    ]
+}

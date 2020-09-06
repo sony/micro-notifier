@@ -1,0 +1,21 @@
+{
+    "host" : "localhost",
+    "port" : 8150,
+    "redis" : {
+        "address" : "localhost:6379",
+        "database" : 1
+    },
+
+    "applications": [
+        {
+            "name"   : "testapp",
+            "key"    : "1234567890",
+            "secret" : "abcdefghij"
+        },
+        {
+            "name"   : "testapp2",
+            "key"    : "anystringwilldo",
+            "secret" : "xyzzy"
+        }
+    ]
+}
