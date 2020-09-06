@@ -62,7 +62,12 @@ func returnJSON(w http.ResponseWriter, val interface{}) {
 	_, _ = w.Write(js)
 }
 
-func returnErr(s *Supervisor, w http.ResponseWriter, apperr *AppError) {
+func returnErr(s *Supervisor, w http.ResponseWriter, err error) {
+	apperr, ok := err.(*AppError)
+	if !ok {
+		apperr = &AppError{Code: 500, Message: "not application error"}
+	}
+
 	if apperr.Code == 500 {
 		s.logger.Errorw("Returning Internal Error (500):",
 			"message", apperr.Message,
@@ -71,11 +76,14 @@ func returnErr(s *Supervisor, w http.ResponseWriter, apperr *AppError) {
 		s.logger.Infow("Returning Client Error:",
 			"code", apperr.Code,
 			"message", apperr.Error())
-
 	}
+
 	body := errorBody{
-		Error: errorResponse{Code: apperr.Code,
-			Message: apperr.Error()}}
+		Error: errorResponse{
+			Code:    apperr.Code,
+			Message: apperr.Error(),
+		},
+	}
 	bodybytes, _ := json.Marshal(body)
 	http.Error(w, string(bodybytes), apperr.Code)
 }

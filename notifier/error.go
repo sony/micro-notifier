@@ -8,12 +8,12 @@ type AppError struct {
 }
 
 // AppErr returns a new AppError including the given HTTP response code.
-func AppErr(code int, message string) *AppError {
+func AppErr(code int, message string) error {
 	return &AppError{Code: code, Message: message, Internal: nil}
 }
 
 // WrapErr returns a new AppError wrapping the given error.
-func WrapErr(code int, err error) *AppError {
+func WrapErr(code int, err error) error {
 	if err == nil {
 		return nil
 	}

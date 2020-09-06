@@ -52,7 +52,7 @@ func (s *Supervisor) InitApps() {
 }
 
 // GetApp returns the named application.
-func (s *Supervisor) GetApp(name string) (*Application, *AppError) {
+func (s *Supervisor) GetApp(name string) (*Application, error) {
 	for _, a := range s.Apps {
 		if a.Name == name {
 			return a, nil
@@ -62,7 +62,7 @@ func (s *Supervisor) GetApp(name string) (*Application, *AppError) {
 }
 
 // GetAppFromKey returns the application with specified key.
-func (s *Supervisor) GetAppFromKey(key string) (*Application, *AppError) {
+func (s *Supervisor) GetAppFromKey(key string) (*Application, error) {
 	ca := s.Config.GetAppFromKey(key)
 	if ca != nil {
 		return s.GetApp(ca.Name)
@@ -71,7 +71,7 @@ func (s *Supervisor) GetAppFromKey(key string) (*Application, *AppError) {
 }
 
 // GetChannels returns an array of channels in the given app
-func (s *Supervisor) GetChannels(appname string) (map[string]*Channel, *AppError) {
+func (s *Supervisor) GetChannels(appname string) (map[string]*Channel, error) {
 	app, apperr := s.GetApp(appname)
 	if apperr != nil {
 		return nil, apperr
@@ -85,7 +85,7 @@ func (s *Supervisor) GetChannels(appname string) (map[string]*Channel, *AppError
 
 // GetChannel returns the named channel in the named application.
 // If there's no such channel, 404 error is returned.
-func (s *Supervisor) GetChannel(appname string, channame string) (*Channel, *AppError) {
+func (s *Supervisor) GetChannel(appname string, channame string) (*Channel, error) {
 	a, apperr := s.GetApp(appname)
 	if apperr != nil {
 		return nil, apperr
@@ -98,7 +98,7 @@ func (s *Supervisor) GetChannel(appname string, channame string) (*Channel, *App
 
 // GetOrCreateChannel returns the named channel in the named application.
 // If there's no such channel, create it.
-func (s *Supervisor) GetOrCreateChannel(appname string, channame string) (*Channel, *AppError) {
+func (s *Supervisor) GetOrCreateChannel(appname string, channame string) (*Channel, error) {
 	a, apperr := s.GetApp(appname)
 	if apperr != nil {
 		return nil, apperr
@@ -111,7 +111,7 @@ func (s *Supervisor) GetOrCreateChannel(appname string, channame string) (*Chann
 
 // AddUser creates a new user associated to an application, with the
 // given connection.
-func (s *Supervisor) AddUser(appname string, conn *websocket.Conn) (*User, *AppError) {
+func (s *Supervisor) AddUser(appname string, conn *websocket.Conn) (*User, error) {
 	a, apperr := s.GetApp(appname)
 	if apperr != nil {
 		return nil, apperr
@@ -134,7 +134,7 @@ func (s *Supervisor) AddUser(appname string, conn *websocket.Conn) (*User, *AppE
 // RemoveUser removes the specified user from the application and
 // associated channels.
 // NB: The user's connection must be cleaned up by the caller (see socket.go)
-func (s *Supervisor) RemoveUser(appname string, uid int) *AppError {
+func (s *Supervisor) RemoveUser(appname string, uid int) error {
 	a, apperr := s.GetApp(appname)
 	if apperr != nil {
 		return apperr
@@ -178,7 +178,7 @@ func (s *Supervisor) RemoveUser(appname string, uid int) *AppError {
 // Subscribe let the user subscribe the named channel
 // The user with UID must be managed by this process (when socket.go calls
 // this, it should.)
-func (s *Supervisor) Subscribe(appname string, uid int, channame string) *AppError {
+func (s *Supervisor) Subscribe(appname string, uid int, channame string) error {
 	a, apperr := s.GetApp(appname)
 	if apperr != nil {
 		return apperr
@@ -205,7 +205,7 @@ func (s *Supervisor) Subscribe(appname string, uid int, channame string) *AppErr
 // Unsubscribe let the user unsubscribe the named channel
 // The user with UID must be managed by this process (when socket.go calls
 // this, it should.)
-func (s *Supervisor) Unsubscribe(appname string, uid int, channame string) *AppError {
+func (s *Supervisor) Unsubscribe(appname string, uid int, channame string) error {
 	a, apperr := s.GetApp(appname)
 	if apperr != nil {
 		return apperr
@@ -236,7 +236,7 @@ func (s *Supervisor) Unsubscribe(appname string, uid int, channame string) *AppE
 //
 
 // This is only used in standalone mode
-func (a *Application) getChannel(channame string) (*Channel, *AppError) {
+func (a *Application) getChannel(channame string) (*Channel, error) {
 	ch, ok := a.Channels[channame]
 	if ok {
 		return ch, nil
@@ -245,7 +245,7 @@ func (a *Application) getChannel(channame string) (*Channel, *AppError) {
 }
 
 // This is only used in standalone mode
-func (a *Application) getOrCreateChannel(channame string) (*Channel, *AppError) {
+func (a *Application) getOrCreateChannel(channame string) (*Channel, error) {
 	ch, ok := a.Channels[channame]
 	if ok {
 		return ch, nil

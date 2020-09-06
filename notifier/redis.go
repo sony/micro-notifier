@@ -211,7 +211,7 @@ func (db *DB) FinishDB() {
 
 // The first half of the transaction.  WATCH the key and fetch its value.
 // On error, UNWATCH the key.
-func (db *DB) watchAndGet(key string) (interface{}, *AppError) {
+func (db *DB) watchAndGet(key string) (interface{}, error) {
 	c, err := db.getPool()
 	if err != nil {
 		return nil, WrapErr(500, err)
@@ -246,7 +246,7 @@ func (db *DB) unwatch() {
 // WATCHed.  Encode payload by json and write it then commit,
 // or discard everything if any step fails.  On success, returns
 // what EXEC returns and nil.  On error, returns nil and *AppError.
-func (db *DB) updateAndCommit(key string, payload interface{}) (interface{}, *AppError) {
+func (db *DB) updateAndCommit(key string, payload interface{}) (interface{}, error) {
 	c, err := db.getPool()
 	if err != nil {
 		return nil, WrapErr(500, err)
@@ -277,7 +277,7 @@ func (db *DB) updateAndCommit(key string, payload interface{}) (interface{}, *Ap
 }
 
 // GetChannels returns map of channel names to channels
-func (db *DB) GetChannels(appname string) (map[string]*Channel, *AppError) {
+func (db *DB) GetChannels(appname string) (map[string]*Channel, error) {
 	c, err := db.getPool()
 	if err != nil {
 		return nil, WrapErr(500, err)
@@ -329,7 +329,7 @@ func (db *DB) GetChannels(appname string) (map[string]*Channel, *AppError) {
 }
 
 // GetChannel returns the named channel.  The named channel must exist.
-func (db *DB) GetChannel(appname string, channame string) (*Channel, *AppError) {
+func (db *DB) GetChannel(appname string, channame string) (*Channel, error) {
 	c, err := db.getPool()
 	if err != nil {
 		return nil, WrapErr(500, err)
@@ -354,7 +354,7 @@ func (db *DB) GetChannel(appname string, channame string) (*Channel, *AppError) 
 
 // GetOrCreateChannel returns the named channel; if the named channel
 // doesn't exist, create one.
-func (db *DB) GetOrCreateChannel(appname string, channame string) (*Channel, *AppError) {
+func (db *DB) GetOrCreateChannel(appname string, channame string) (*Channel, error) {
 	key := appname + "/channels/" + channame
 	var ch Channel
 
@@ -384,7 +384,7 @@ func (db *DB) GetOrCreateChannel(appname string, channame string) (*Channel, *Ap
 
 // AddUserIDToChannel adds UID to the list of subscribers in the specified
 // channel.
-func (db *DB) AddUserIDToChannel(appname string, channame string, uid int) *AppError {
+func (db *DB) AddUserIDToChannel(appname string, channame string, uid int) error {
 	key := appname + "/channels/" + channame
 	var ch Channel
 
@@ -415,7 +415,7 @@ func (db *DB) AddUserIDToChannel(appname string, channame string, uid int) *AppE
 
 // DeleteUserIDFromChannel removes the given uid from the subscribers
 // of the specified channel.
-func (db *DB) DeleteUserIDFromChannel(appname string, channame string, uid int) *AppError {
+func (db *DB) DeleteUserIDFromChannel(appname string, channame string, uid int) error {
 	key := appname + "/channels/" + channame
 	var ch Channel
 
@@ -448,7 +448,7 @@ func (db *DB) DeleteUserIDFromChannel(appname string, channame string, uid int) 
 }
 
 // Returns an unique nonnegative UID in the application.
-func (db *DB) allocateUserID(appname string) (int, *AppError) {
+func (db *DB) allocateUserID(appname string) (int, error) {
 	key := appname + "/users"
 
 	r, apperr := db.watchAndGet(key)
@@ -505,7 +505,7 @@ func (db *DB) allocateUserID(appname string) (int, *AppError) {
 
 // DeleteUserID deletes the given user id.  Note: The user must have been
 // unsubscribed from all the channels.  Supervisor.RemoveUser takes care of that.
-func (db *DB) DeleteUserID(appname string, uid int) *AppError {
+func (db *DB) DeleteUserID(appname string, uid int) error {
 	key := appname + "/users"
 
 	r, apperr := db.watchAndGet(key)
@@ -544,7 +544,7 @@ func (db *DB) DeleteUserID(appname string, uid int) *AppError {
 }
 
 // GetAllUserIDs returns all user IDs in the given app.
-func (db *DB) GetAllUserIDs(appname string) ([]int, *AppError) {
+func (db *DB) GetAllUserIDs(appname string) ([]int, error) {
 	c, err := db.getPool()
 	if err != nil {
 		return nil, WrapErr(500, err)
@@ -617,7 +617,7 @@ func (s *Supervisor) redisSubscriberLoop() {
 	}
 }
 
-func (s *Supervisor) handleRedisEventRequest(er *EventRequest) *AppError {
+func (s *Supervisor) handleRedisEventRequest(er *EventRequest) error {
 	if s.db.eventCallback != nil {
 		if !s.db.eventCallback(er) {
 			return nil
@@ -639,7 +639,7 @@ func (s *Supervisor) KickRedisSubscription() {
 }
 
 // PublishRedisEvent pushes Redis events.
-func (s *Supervisor) PublishRedisEvent(ev *EventRequest) *AppError {
+func (s *Supervisor) PublishRedisEvent(ev *EventRequest) error {
 	if s.db != nil {
 		data, err := json.Marshal(ev)
 		if err != nil {

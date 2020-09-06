@@ -238,7 +238,7 @@ func (s *Supervisor) establishConnection(w http.ResponseWriter, r *http.Request)
 // Broadcast sends out the event to the users who subscribe the given channel.
 // In distributed mode, we don't know which process is managing the user,
 // so we use Redis Keyspace Notification.
-func (s *Supervisor) Broadcast(a *Application, e *Event, cn string) *AppError {
+func (s *Supervisor) Broadcast(a *Application, e *Event, cn string) error {
 	if s.db != nil {
 		s.logger.Debugw("queueing",
 			"event", e,
@@ -252,7 +252,7 @@ func (s *Supervisor) Broadcast(a *Application, e *Event, cn string) *AppError {
 	return s.realBroadcast(a, e, cn)
 }
 
-func (s *Supervisor) realBroadcast(a *Application, e *Event, cn string) *AppError {
+func (s *Supervisor) realBroadcast(a *Application, e *Event, cn string) error {
 	s.logger.Debugw("broadcasting",
 		"event", e,
 		"channel", cn)
