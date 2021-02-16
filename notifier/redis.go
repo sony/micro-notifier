@@ -601,11 +601,11 @@ func (s *Supervisor) redisSubscriberLoop() error {
 			var er EventRequest
 			err := json.Unmarshal(v.Data, &er)
 			if err != nil {
-				s.logger.Infow("redis message decoding error", "error", err, "message", v.Data)
+				s.logger.Errorw("redis message decoding error", "error", err, "message", v.Data)
 			} else {
 				apperr := s.handleRedisEventRequest(&er)
 				if apperr != nil {
-					s.logger.Infow("redis message handle error", "appError", apperr, "message", er)
+					s.logger.Errorw("redis message handle error", "appError", apperr, "message", er)
 				}
 			}
 		case error:
