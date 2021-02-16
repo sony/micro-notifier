@@ -1,9 +1,10 @@
-// +build redis_test, redis_sentinel_test
+// +build redis_test redis_sentinel_test
 
 package notifier
 
 import (
 	"net/http"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -203,6 +204,76 @@ func TestLowlevelBroadcast(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 
 	require.Equal(t, &EventRequest{Name: "event-name",
+		Data:        "event-data",
+		Application: "testapp",
+		Channel:     "chan0"},
+		ersave)
+}
+
+func TestLowlevelBroadcast_reconnection(t *testing.T) {
+	// execute this integration test with Redis installed by Homebrew
+	if err := exec.Command("bash", "-c", "brew list | grep redis").Run(); err != nil {
+		return // skip this test
+	}
+
+	err := exec.Command("bash", "-c", "brew services restart redis").Run()
+	require.NoError(t, err)
+	time.Sleep(500 * time.Millisecond)
+
+	s := initRedisTest(t)
+	defer s.Finish()
+
+	u, apperr := s.AddUser("testapp", nil)
+	require.Nil(t, apperr)
+	require.Equal(t, 0, u.ID)
+	u, apperr = s.AddUser("testapp", nil)
+	require.NoError(t, apperr)
+	require.Equal(t, 1, u.ID)
+
+	_, apperr = s.GetOrCreateChannel("testapp", "chan0")
+	require.Nil(t, apperr)
+
+	var ersave *EventRequest
+	s.db.eventCallback = func(er *EventRequest) bool {
+		ersave = er
+		return false
+	}
+
+	a, _ := s.GetApp("testapp")
+	apperr = s.Broadcast(a, &Event{Name: "event-name", Data: "event-data"}, "chan0")
+	require.NoError(t, apperr)
+	time.Sleep(500 * time.Millisecond)
+
+	require.Equal(t, &EventRequest{
+		Name:        "event-name",
+		Data:        "event-data",
+		Application: "testapp",
+		Channel:     "chan0"},
+		ersave)
+
+	// re-send to stopped redis
+	err = exec.Command("bash", "-c", "brew services stop redis").Run()
+	require.NoError(t, err)
+	time.Sleep(500 * time.Millisecond)
+
+	ersave = nil
+	apperr = s.Broadcast(a, &Event{Name: "event-name", Data: "event-data"}, "chan0")
+	require.Error(t, apperr)
+
+	time.Sleep(5000 * time.Millisecond)
+	require.Nil(t, ersave)
+
+	// start redis
+	err = exec.Command("bash", "-c", "brew services start redis").Run()
+	require.NoError(t, err)
+	time.Sleep(5000 * time.Millisecond)
+
+	apperr = s.Broadcast(a, &Event{Name: "event-name", Data: "event-data"}, "chan0")
+	require.NoError(t, apperr)
+	time.Sleep(500 * time.Millisecond)
+
+	require.Equal(t, &EventRequest{
+		Name:        "event-name",
 		Data:        "event-data",
 		Application: "testapp",
 		Channel:     "chan0"},

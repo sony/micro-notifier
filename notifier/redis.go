@@ -574,46 +574,55 @@ func (db *DB) GetAllUserIDs(appname string) ([]int, error) {
 // Redis push event handling
 //
 
-func (s *Supervisor) redisSubscriberLoop() {
+func (s *Supervisor) redisSubscriberLoop() error {
 	c, err := s.db.getPool()
 	if err != nil {
-		s.logger.Errorw("PubSubConn failed to get pool",
-			"error", err)
-		return
+		s.logger.Errorw("PubSubConn failed to get pool", "error", err)
+		return err
 	}
 	defer c.Close()
 
 	psc := redis.PubSubConn{Conn: c}
 	err = psc.Subscribe("events")
 	if err != nil {
-		s.logger.Errorw("PubSubConn Subscribe failed",
-			"error", err)
-		return
+		s.logger.Errorw("PubSubConn Subscribe failed", "error", err)
+		return err
 	}
+	defer func() {
+		if err := psc.Close(); err != nil {
+			s.logger.Errorw("PubSubConn Close failed", "error", err)
+			return
+		}
+	}()
+
 	for {
 		switch v := psc.Receive().(type) {
 		case redis.Message:
 			var er EventRequest
 			err := json.Unmarshal(v.Data, &er)
 			if err != nil {
-				s.logger.Infow("redis message decoding error",
-					"error", err,
-					"message", v.Data)
+				s.logger.Errorw("redis message decoding error", "error", err, "message", v.Data)
 			} else {
 				apperr := s.handleRedisEventRequest(&er)
 				if apperr != nil {
-					s.logger.Infow("redis message handle error",
-						"appError", apperr,
-						"message", er)
+					s.logger.Errorw("redis message handle error", "appError", apperr, "message", er)
 				}
 			}
 		case error:
-			if strings.Contains(v.(error).Error(), "use of closed network") {
-				_ = psc.Close()
-				return
-			}
-			s.logger.Infow("redis error event", "error", v)
+			s.logger.Errorw("redis error event", "error", v)
+			return v
 		}
+	}
+}
+
+func (s *Supervisor) redisSubscriberLoopWithRetry() {
+	for {
+		err := s.redisSubscriberLoop()
+		if strings.Contains(err.Error(), "use of closed network") {
+			return
+		}
+
+		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -634,7 +643,7 @@ func (s *Supervisor) handleRedisEventRequest(er *EventRequest) error {
 // KickRedisSubscription starts goroutine to handle Redis events.
 func (s *Supervisor) KickRedisSubscription() {
 	if s.db != nil {
-		go s.redisSubscriberLoop()
+		go s.redisSubscriberLoopWithRetry()
 	}
 }
 
