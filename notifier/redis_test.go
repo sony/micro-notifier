@@ -211,7 +211,7 @@ func TestLowlevelBroadcast(t *testing.T) {
 }
 
 func TestLowlevelBroadcast_reconnection(t *testing.T) {
-	// execute this integration prepared Redis using brew on Mac ONLY.
+	// execute this integration test with Redis installed by Homebrew
 	if err := exec.Command("bash", "-c", "brew list | grep redis").Run(); err != nil {
 		return // skip this test
 	}
@@ -251,7 +251,7 @@ func TestLowlevelBroadcast_reconnection(t *testing.T) {
 		Channel:     "chan0"},
 		ersave)
 
-	// re-send under stopped redis
+	// re-send to stopped redis
 	err = exec.Command("bash", "-c", "brew services stop redis").Run()
 	require.NoError(t, err)
 	time.Sleep(500 * time.Millisecond)
