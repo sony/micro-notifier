@@ -609,6 +609,7 @@ func (s *Supervisor) redisSubscriberLoop() error {
 				}
 			}
 		case error:
+			s.logger.Errorw("redis error event", "error", v)
 			return v
 		}
 	}
