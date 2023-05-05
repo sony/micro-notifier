@@ -1,3 +1,4 @@
+//go:build chrome_test
 // +build chrome_test
 
 package notifier
@@ -121,9 +122,7 @@ func (ts *TestServers) signerHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write(response)
 }
 
-//
 // Landing page for TestWebsocketConnection
-//
 func websocketConnectionContent(ts *TestServers, isSecure bool) []byte {
 	return []byte(`
 <head>
@@ -248,9 +247,7 @@ func TestWebsocketConnection(t *testing.T) {
 	}
 }
 
-//
 // Landing page for TestWebsocketSignature
-//
 func websocketSignatureContent(ts *TestServers, isSecure bool) []byte {
 	return []byte(`
 <head>

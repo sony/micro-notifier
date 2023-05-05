@@ -1,5 +1,5 @@
-// +build chrome_test
-// +build redis_test
+//go:build chrome_test && redis_test
+// +build chrome_test,redis_test
 
 package notifier
 
