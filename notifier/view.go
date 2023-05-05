@@ -2,6 +2,7 @@ package notifier
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -134,7 +135,7 @@ func (s *Supervisor) getChannelUsers(w http.ResponseWriter, r *http.Request) {
 
 	us := userResponse{}
 	for uid := range ch.Users {
-		uu := userResponseItem{ID: string(uid)}
+		uu := userResponseItem{ID: fmt.Sprint(uid)}
 		us.User = append(us.User, uu)
 	}
 	returnJSON(w, us)
