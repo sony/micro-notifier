@@ -153,7 +153,7 @@ func (s *Supervisor) socketMessageHandleLoop(u *User) {
 				s.socketSendInvalid(u, ev.Name, ev.Data)
 				break
 			}
-			s.socketSend(u, "pusher:subscription_succeeded", "", "ok")
+			s.socketSend(u, "pusher_internal:subscription_succeeded", channel.(string), "ok")
 		case "pusher:unsubscribe":
 			m, ok := ev.Data.(map[string]interface{})
 			if !ok {
@@ -168,7 +168,6 @@ func (s *Supervisor) socketMessageHandleLoop(u *User) {
 			s.logger.Debugw("unsubscribe request",
 				"channel", channel)
 			_ = s.Unsubscribe(u.App.Name, u.ID, channel.(string))
-			s.socketSend(u, "pusher:subscription_succeeded", "", "ok")
 		default:
 			s.socketSend(u, "pusher:error", "", "not implemented")
 		}
