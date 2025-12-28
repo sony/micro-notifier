@@ -53,7 +53,7 @@ type getChannelResponse struct {
 	SubscriptionCount int  `json:"subscription_count,omitempty"`
 }
 
-func returnJSON(w http.ResponseWriter, val interface{}) {
+func returnJSON(w http.ResponseWriter, val any) {
 	js, err := json.Marshal(val)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

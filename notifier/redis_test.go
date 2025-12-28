@@ -1,5 +1,4 @@
 //go:build redis_test || redis_sentinel_test
-// +build redis_test redis_sentinel_test
 
 package notifier
 
