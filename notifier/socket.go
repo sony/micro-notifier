@@ -29,7 +29,7 @@ type ConnectionEstablishedData struct {
 	ActivityTimeout int    `json:"activity_timeout"`
 }
 
-func encodePusherEvent(eventName string, chanName string, data interface{}) ([]byte, error) {
+func encodePusherEvent(eventName string, chanName string, data any) ([]byte, error) {
 	s, ok := data.(string)
 	if !ok {
 		js, err := json.Marshal(data)
@@ -62,7 +62,7 @@ func (s *Supervisor) socketFinish(u *User, logmsg string, err error) {
 	_ = u.Connection.Close()
 }
 
-func (s *Supervisor) socketSend(u *User, eventName string, chanName string, data interface{}) {
+func (s *Supervisor) socketSend(u *User, eventName string, chanName string, data any) {
 	msg, err := encodePusherEvent(eventName, chanName, data)
 	if err != nil {
 		s.socketFinish(u, "[internal] marshalling send packet error", err)
@@ -74,7 +74,7 @@ func (s *Supervisor) socketSend(u *User, eventName string, chanName string, data
 	}
 }
 
-func (s *Supervisor) socketSendInvalid(u *User, event string, received interface{}) {
+func (s *Supervisor) socketSendInvalid(u *User, event string, received any) {
 	s.logger.Debugw("invalid event",
 		"event", event,
 		"data", received)
@@ -115,8 +115,8 @@ func (s *Supervisor) socketMessageHandleLoop(u *User) {
 		s.logger.Infow("received", "message", string(p))
 
 		var ev struct {
-			Name string      `json:"event"`
-			Data interface{} `json:"data"`
+			Name string `json:"event"`
+			Data any    `json:"data"`
 		}
 		err = json.Unmarshal(p, &ev)
 		if err != nil {
@@ -128,7 +128,7 @@ func (s *Supervisor) socketMessageHandleLoop(u *User) {
 		case "pusher:ping":
 			s.socketSend(u, "pusher:pong", "", "ok")
 		case "pusher:subscribe":
-			m, ok := ev.Data.(map[string]interface{})
+			m, ok := ev.Data.(map[string]any)
 			if !ok {
 				s.socketSendInvalid(u, ev.Name, ev.Data)
 				break
@@ -155,7 +155,7 @@ func (s *Supervisor) socketMessageHandleLoop(u *User) {
 			}
 			s.socketSend(u, "pusher_internal:subscription_succeeded", channel.(string), "ok")
 		case "pusher:unsubscribe":
-			m, ok := ev.Data.(map[string]interface{})
+			m, ok := ev.Data.(map[string]any)
 			if !ok {
 				s.socketSendInvalid(u, ev.Name, ev.Data)
 				break

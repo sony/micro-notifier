@@ -211,7 +211,7 @@ func (db *DB) FinishDB() {
 
 // The first half of the transaction.  WATCH the key and fetch its value.
 // On error, UNWATCH the key.
-func (db *DB) watchAndGet(key string) (interface{}, error) {
+func (db *DB) watchAndGet(key string) (any, error) {
 	c, err := db.getPool()
 	if err != nil {
 		return nil, wrapErr(500, err)
@@ -246,7 +246,7 @@ func (db *DB) unwatch() {
 // WATCHed.  Encode payload by json and write it then commit,
 // or discard everything if any step fails.  On success, returns
 // what EXEC returns and nil.  On error, returns nil and *appError.
-func (db *DB) updateAndCommit(key string, payload interface{}) (interface{}, error) {
+func (db *DB) updateAndCommit(key string, payload any) (any, error) {
 	c, err := db.getPool()
 	if err != nil {
 		return nil, wrapErr(500, err)
@@ -294,13 +294,13 @@ func (db *DB) GetChannels(appname string) (map[string]*Channel, error) {
 		if err != nil {
 			return nil, wrapErr(500, err)
 		}
-		ar, ok := r.([]interface{})
+		ar, ok := r.([]any)
 		if !ok {
 			return nil, appErr(500, fmt.Sprintf("redis SCAN returned weird value: %v", r))
 		}
 
 		next := string(ar[0].([]byte))
-		keys, ok := ar[1].([]interface{})
+		keys, ok := ar[1].([]any)
 		if !ok {
 			return nil, appErr(500, fmt.Sprintf("redis SCAN returned weird value: %v", r))
 		}
